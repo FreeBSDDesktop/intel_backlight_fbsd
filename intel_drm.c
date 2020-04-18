@@ -45,6 +45,11 @@
 #include <sys/sysinfo.h>
 #elif defined(HAVE_SWAPCTL) /* Solaris */
 #include <sys/swap.h>
+#elif defined(__FreeBSD__)
+#include <sys/param.h>
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#include <vm/vm_param.h>
 #endif
 
 #include "intel_gpu_tools.h"
@@ -170,6 +175,36 @@ intel_get_total_swap_mb(void)
 	free(buf);
 
 	retval = (uint64_t) pagesize * totalpages;
+#elif defined(__FreeBSD__)
+	int mib[16], pagesize;
+	uint64_t tmp_total;
+	size_t mibsize, size;
+	struct xswdev swapdev;
+
+	pagesize = getpagesize();
+	mibsize = nitems(mib);
+	if (sysctlnametomib("vm.swap_info", mib, &mibsize) == -1) {
+	    perror("sysctlnametomib");
+	    return retval;
+	}
+
+	for (int n = 0; ; ++n) {
+	    mib[mibsize] = n;
+	    size = sizeof swapdev;
+	    if (sysctl(mib, mibsize + 1, &swapdev, &size, NULL, 0) == -1) {
+		break;
+	    }
+	    if (swapdev.xsw_version != XSWDEV_VERSION) {
+		fprintf(stderr, "xswdev version mismatch\n");
+		return retval;
+	    }
+
+	    tmp_total = (uint64_t) swapdev.xsw_nblks * pagesize;
+	    retval += tmp_total;
+	}
+	if (errno != ENOENT) {
+	    perror("sysctl");
+	}
 #else
 #warning "Unknown how to get swap size for this OS"
 	return 0;
