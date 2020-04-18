@@ -1,0 +1,6 @@
+notify 100 {
+        match "system" "ACPI";
+        match "subsystem" "Video";
+        match "type" "brightness";
+        action "/usr/local/bin/intel_backlight $notify";
+};
