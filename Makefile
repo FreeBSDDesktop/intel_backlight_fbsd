@@ -9,7 +9,10 @@ PREFIX ?= /usr/local
 MANPREFIX ?= $(PREFIX)
 SRC = intel_reg_map.c intel_mmio.c intel_backlight.c intel_drm.c intel_pci.c
 
-all: intel_backlight
+all: intel_backlight acpi-video-intel-backlight.conf
+
+acpi-video-intel-backlight.conf: acpi-video-intel-backlight.conf.in
+	sed -e 's|/usr/local|${PREFIX}|' < $> > $@
 
 intel_backlight: $(SRC)
 	$(CC) -o intel_backlight $(INCS) $(LIBS) $(SRC) $(CFLAGS) $(LDFLAGS)
@@ -34,4 +37,4 @@ install-setuid-strip: install
 	strip "$(DESTDIR)$(PREFIX)/bin/intel_backlight"
 
 clean:
-	rm -f intel_backlight
+	rm -f intel_backlight acpi-video-intel-backlight.conf
