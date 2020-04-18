@@ -121,7 +121,7 @@ intel_get_total_ram_mb(void)
 uint64_t
 intel_get_total_swap_mb(void)
 {
-	uint64_t retval;
+	uint64_t retval = 0;
 
 #ifdef HAVE_STRUCT_SYSINFO_TOTALRAM /* Linux */
 	struct sysinfo sysinf;
